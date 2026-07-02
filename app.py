@@ -1,36 +1,35 @@
-from flask import Flask, request, send_file
-import yt_dlp
-import os
+from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return '''
-        <form action="/download" method="get">
-            <input type="text" name="url" placeholder="הכנס לינק מיוטיוב">
-            <button type="submit">הורד סרטון</button>
+# ממשק פשוט שנראה כמו כלי לניהול קבצים
+html_template = """
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מערכת ניהול קבצים</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        .container { border: 1px solid #ccc; padding: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>מערכת ניהול קבצים אישית</h1>
+        <p>ניתן להעלות קבצים לשרת לצורך גיבוי או העברה</p>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="file">
+            <button type="submit">העלה קובץ</button>
         </form>
-    '''
+    </div>
+</body>
+</html>
+"""
 
-@app.route('/download')
-def download():
-    video_url = request.args.get('url')
-    if not video_url:
-        return "נא לספק לינק"
-
-    # שימוש בסיומת .dat כדי שהקובץ לא יזוהה אוטומטית כוידאו
-    ydl_opts = {
-        'format': 'best',
-        'outtmpl': 'downloaded_video.dat',
-        'nocheckcertificate': True,
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(video_url, download=True)
-        filename = ydl.prepare_filename(info)
-    
-    return send_file(filename, as_attachment=True)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    return render_template_string(html_template)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run()
