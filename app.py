@@ -27,28 +27,34 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # מעבר לגרסה העדכנית של ה-API
+    # שימוש בנקודת הקצה המרכזית של ה-API
     cobalt_api_url = "https://api.cobalt.tools/"
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json"
     }
     
-    # עדכון המבנה לפי הדרישות החדשות של Cobalt (הורדת אודיו בלבד)
     payload = {
         "url": video_url,
-        "downloadMode": "audio",
-        "audioFormat": "mp3"
+        "downloadMode": "audio"  # הגדרה בסיסית להורדת שמע
     }
 
     try:
         response = requests.post(cobalt_api_url, json=payload, headers=headers)
-        response_data = response.json()
+        
+        # הדפסת הסטטוס ללוגים של השרת
+        print(f"Cobalt status code: {response.status_code}")
+        
+        try:
+            response_data = response.json()
+        except Exception:
+            return f"השרת הציג תגובה שאינה JSON. טקסט מלא: {response.text}"
 
-        # בדיקת סטטוס ההצלחה החדש (בדרך כלל מחזיר סוג "tunnel" או "redirect" עם כתובת לקובץ)
-        if response_data.get("status") in ["tunnel", "redirect", "stream"]:
+        if response_data.get("status") in ["tunnel", "redirect", "stream", "picker"]:
             download_url = response_data.get("url")
-            
+            if not download_url:
+                return f"התקבל סטטוס הצלחה אך ללא קישור להורדה. תגובת השרת: {response_data}"
+                
             file_response = requests.get(download_url, stream=True)
             filename = "downloaded_audio.mp3"
             
@@ -59,10 +65,11 @@ def download():
             
             return send_file(filename, as_attachment=True, download_name="audio.mp3")
         else:
-            return f"שגיאה מהשרת המתווך: {response_data.get('text', 'לא ניתן לעבד את הקישור במבנה החדש')}"
+            # כאן אנחנו מציגים את התשובה המלאה מאיפיאיי של קובלט כדי להבין את הבעיה
+            return f"שגיאה מפורטת מהשרת המתווך: {response_data}"
 
     except Exception as e:
-        return f"שגיאה בתהליך ההורדה: {str(e)}"
+        return f"שגיאה כללית בתהליך ההורדה: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
