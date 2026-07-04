@@ -19,16 +19,15 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות עוקפות חסימה ללא תלות בעוגיות שפגו
+    # הגדרות המשתמשות במנגנון OAuth הרשמי של יוטיוב לעקיפת חסימות IP של ענן
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
-        # שימוש בחילוץ מותאם אישית של לקוחות ניידים ואינטרנט משולב
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'android', 'web_embedded'],
-                'skip': ['webpage', 'configs']
+                'player_client': ['web', 'android'],
+                'oauth': True  # הפעלת אימות OAuth רשמי
             }
         },
     }
@@ -37,7 +36,7 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=True)
             if not info:
-                return "שגיאה: יוטיוב חסמה את הגישה לשרת זה. יש לרענן עוגיות או להשתמש ב-Proxy."
+                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון."
             filename = ydl.prepare_filename(info)
         return send_file(filename, as_attachment=True)
     except Exception as e:
