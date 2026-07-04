@@ -1,13 +1,12 @@
 import os
 import sys
 
-# התקנת yt-dlp אוטומטית אם היא חסרה בשרת
 try:
-    import yt_dlp
+    import requests
 except ModuleNotFoundError:
     import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp"])
-    import yt_dlp
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
 
 from flask import Flask, request, send_file
 
@@ -28,36 +27,16 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    output_filename = 'downloaded_audio'
-    output_file_path = f"{output_filename}.mp3"
-
-    # הגדרות עבור yt-dlp להורדת אודיו בלבד והמרה ל-MP3
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': output_filename,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'timeout': 60,
-    }
-
+    # שירות הורדה שמשתמש בטכניקת עקיפה מובנית
+    api_url = "https://snapsave.app/api/ajaxSearch"
+    payload = {'url': video_url}
+    
     try:
-        # מחיקת קובץ ישן אם קיים כדי למנוע כפילויות
-        if os.path.exists(output_file_path):
-            os.remove(output_file_path)
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
-
-        if os.path.exists(output_file_path):
-            return send_file(output_file_path, as_attachment=True, download_name="audio.mp3")
-        else:
-            return "שגיאה: הקובץ לא נוצר בהצלחה בשרת"
-
+        response = requests.post(api_url, data=payload)
+        # זה יאפשר לנו למשוך את הקישור הישיר ל-MP3 שהמנוע שלהם מייצר
+        return f"נא להשתמש בקישור הבא: {response.text}"
     except Exception as e:
-        return f"שגיאה פנימית בהורדה ישירה מיוטיוב: {str(e)}"
+        return f"שגיאה בעבודה מול השירות: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
