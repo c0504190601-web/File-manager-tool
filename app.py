@@ -19,17 +19,11 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות מיוחדות המדמות נגן חיצוני מוטמע (Embedded) לעקיפת חסימות ענן
+    # הגדרות בסיסיות נקיות
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['web_embedded'],
-                'skip': ['webpage', 'configs']
-            }
-        },
     }
 
     try:
@@ -40,7 +34,7 @@ def download():
             filename = ydl.prepare_filename(info)
         return send_file(filename, as_attachment=True)
     except Exception as e:
-        return f"שגיאה בהורדה: {str(e)}"
+        return f"חסימת שרת: Render חסום כרגע ביוטיוב. מומלץ להעביר את הקוד לפלטפורמה חלופית כמו Hugging Face או Vercel. פירוט שגיאה: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
