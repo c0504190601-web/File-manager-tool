@@ -19,14 +19,14 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # אילוץ שימוש בלקוח טלוויזיה חכמה (tvhtml5) לעקיפת חסימות IP בענן
+    # שימוש בשמות הלקוחות המדויקים (tv ו-ios) המאפשרים עקיפת מנגנוני הגנת בוטים בענן
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['tvhtml5'],
+                'player_client': ['tv', 'ios'],
             }
         },
     }
