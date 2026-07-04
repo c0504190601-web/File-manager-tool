@@ -19,21 +19,16 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות מתוקנות המדמות בצורה מלאה לקוח אינטרנט מובנה כדי למנוע את דרישת הבוטים
+    # הגדרות אופטימליות לעקיפת חסימות IP של שרתי ענן ללא עוגיות
     ydl_opts = {
-        'format': 'best',
+        'format': 'worst/best', # עדיפות לפורמט בסיסי וקל יותר לעקיפת חסימות, ואם לא אז הכי טוב
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['web_creator', 'tv'],
+                'player_client': ['safari', 'web'],
             }
         },
-        # הוספת כותרת דפדפן מותאמת אישית כדי למנוע זיהוי של השרת כבוט
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
-        }
     }
 
     try:
