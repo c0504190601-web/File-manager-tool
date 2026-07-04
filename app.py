@@ -19,14 +19,14 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הסרת ה-Proxy הבעייתי ושימוש בהגדרות חילוץ עצמאיות
+    # אילוץ שימוש בלקוח טלוויזיה חכמה (tvhtml5) לעקיפת חסימות IP בענן
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['web_embedded', 'android'],
+                'player_client': ['tvhtml5'],
             }
         },
     }
@@ -35,7 +35,7 @@ def download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=True)
             if not info:
-                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון."
+                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון בגלל הגבלות שרת."
             filename = ydl.prepare_filename(info)
         return send_file(filename, as_attachment=True)
     except Exception as e:
