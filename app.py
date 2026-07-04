@@ -27,8 +27,8 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # שימוש בנקודת הקצה המרכזית של ה-API
-    cobalt_api_url = "https://api.cobalt.tools/"
+    # שימוש ב-API חלופי יציב שאינו דורש הרשמה או מפתח
+    api_url = f"https://co.wuk.sh/api/json"
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json"
@@ -36,25 +36,17 @@ def download():
     
     payload = {
         "url": video_url,
-        "downloadMode": "audio"  # הגדרה בסיסית להורדת שמע
+        "isAudioOnly": True,
+        "aFormat": "mp3"
     }
 
     try:
-        response = requests.post(cobalt_api_url, json=payload, headers=headers)
-        
-        # הדפסת הסטטוס ללוגים של השרת
-        print(f"Cobalt status code: {response.status_code}")
-        
-        try:
-            response_data = response.json()
-        except Exception:
-            return f"השרת הציג תגובה שאינה JSON. טקסט מלא: {response.text}"
+        response = requests.post(api_url, json=payload, headers=headers)
+        response_data = response.json()
 
-        if response_data.get("status") in ["tunnel", "redirect", "stream", "picker"]:
+        if response_data.get("status") in ["stream", "redirect"]:
             download_url = response_data.get("url")
-            if not download_url:
-                return f"התקבל סטטוס הצלחה אך ללא קישור להורדה. תגובת השרת: {response_data}"
-                
+            
             file_response = requests.get(download_url, stream=True)
             filename = "downloaded_audio.mp3"
             
@@ -65,11 +57,21 @@ def download():
             
             return send_file(filename, as_attachment=True, download_name="audio.mp3")
         else:
-            # כאן אנחנו מציגים את התשובה המלאה מאיפיאיי של קובלט כדי להבין את הבעיה
-            return f"שגיאה מפורטת מהשרת המתווך: {response_data}"
+            # אם גם השרת הזה מחזיר שגיאה, ננסה גישת הורדה ישירה חלופית
+            fallback_url = f"https://api.jet-dl.top/api/download?url={video_url}&format=mp3"
+            file_response = requests.get(fallback_url, stream=True)
+            if file_response.status_code == 200:
+                filename = "downloaded_audio.mp3"
+                with open(filename, 'wb') as f:
+                    for chunk in file_response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                return send_file(filename, as_attachment=True, download_name="audio.mp3")
+            
+            return f"שגיאה בקבלת קובץ השמע: {response_data.get('text', 'השרתים המתווכים עמוסים כרגע')}"
 
     except Exception as e:
-        return f"שגיאה כללית בתהליך ההורדה: {str(e)}"
+        return f"שגיאה בתהליך ההורדה: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
