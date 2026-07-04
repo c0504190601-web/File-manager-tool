@@ -1,49 +1,29 @@
 import os
-import sys
-import subprocess
-
-# פונקציה להתקנה אוטומטית של ספריות חסרות
-def install_and_import(package):
-    try:
-        return __import__(package)
-    except ImportError:
-        print(f"מתקין את {package}...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-        return __import__(package)
-
-flask = install_and_import('flask')
-yt_dlp = install_and_import('yt_dlp')
-
-from flask import Flask, request, send_file, render_template_string
+import requests
+from flask import Flask, request, render_template_string, redirect
 
 app = Flask(__name__)
-
-# תיקייה לשמירת הקבצים באופן זמני
-DOWNLOAD_FOLDER = 'downloads'
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
 
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html dir="rtl">
 <head>
-    <title>מוריד סרטונים מקצועי</title>
+    <title>עוקף חסימה להורדה</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f4; }
-        form { background: white; padding: 20px; display: inline-block; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input { padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #cc0000; }
-        .msg { margin-top: 20px; color: #555; }
+        body { font-family: Arial; text-align: center; padding-top: 50px; background: #f0f0f0; }
+        .container { background: white; padding: 30px; display: inline-block; border-radius: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+        input { width: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h2>מוריד סרטוני YouTube</h2>
-    <form action="/download" method="get">
-        <input type="text" name="url" placeholder="הדבק לינק מיוטיוב כאן" required>
-        <button type="submit">הורד עכשיו</button>
-    </form>
-    <div class="msg">ההורדה עשויה לקחת כמה שניות, נא להמתין.</div>
+    <div class="container">
+        <h2>הורדת סרטון (עוקף נטפרי)</h2>
+        <form action="/get_link" method="get">
+            <input type="text" name="url" placeholder="הדבק לינק יוטיוב כאן" required>
+            <button type="submit">קבל קישור להורדה</button>
+        </form>
+    </div>
 </body>
 </html>
 '''
@@ -52,31 +32,37 @@ HTML_TEMPLATE = '''
 def index():
     return render_template_string(HTML_TEMPLATE)
 
-@app.route('/download')
-def download():
-    video_url = request.args.get('url')
-    if not video_url:
-        return "נא לספק לינק תקין"
+@app.route('/get_link')
+def get_link():
+    youtube_url = request.args.get('url')
+    if not youtube_url:
+        return "נא להזין לינק"
 
-    # הגדרות עבור yt-dlp
-    ydl_opts = {
-        'format': 'best',  # מוריד את האיכות הכי טובה שיש בקובץ אחד (וידאו + סאונד)
-        'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s', # שם הקובץ שיווצר
-        'noplaylist': True,
-    }
-
+    # שימוש ב-API חיצוני (למשל של שירות בשם loader.to או cobalt)
+    # כאן נשתמש בדוגמה של API פשוט שמחזיר קישור ישיר
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # חילוץ מידע והורדה
-            info = ydl.extract_info(video_url, download=True)
-            file_path = ydl.prepare_filename(info)
-            
-        # שליחת הקובץ למשתמש להורדה
-        return send_file(file_path, as_attachment=True)
+        # זוהי דוגמה לשימוש בשירות שנקרא Cobalt שפופולרי לעקיפות כאלו
+        api_url = "https://api.cobalt.tools/api/json"
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "url": youtube_url,
+            "vQuality": "720"
+        }
+        
+        response = requests.post(api_url, json=data, headers=headers)
+        res_data = response.json()
+        
+        if "url" in res_data:
+            # אנחנו מפנים את המשתמש ישירות לקובץ הוידאו שהשרת מצא
+            return redirect(res_data["url"])
+        else:
+            return f"השירות לא הצליח למצוא קישור: {res_data.get('text', 'שגיאה כללית')}"
 
     except Exception as e:
-        return f"שגיאה בהורדה: {str(e)}"
+        return f"שגיאה: {str(e)}"
 
 if __name__ == '__main__':
-    # הרצת השרת
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
