@@ -1,12 +1,13 @@
 import os
 import sys
 
+# התקנת yt-dlp אוטומטית אם היא חסרה בשרת
 try:
-    import requests
+    import yt_dlp
 except ModuleNotFoundError:
     import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    import requests
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp"])
+    import yt_dlp
 
 from flask import Flask, request, send_file
 
@@ -27,24 +28,36 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # שרת API יציב מבוסס תשתית ענן מוכרת
-    api_url = f"https://api.savetube.me/download?url={video_url}&format=mp3"
+    output_filename = 'downloaded_audio'
+    output_file_path = f"{output_filename}.mp3"
+
+    # הגדרות עבור yt-dlp להורדת אודיו בלבד והמרה ל-MP3
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': output_filename,
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'timeout': 60,
+    }
 
     try:
-        file_response = requests.get(api_url, stream=True, timeout=30)
-        
-        if file_response.status_code == 200:
-            filename = "downloaded_audio.mp3"
-            with open(filename, 'wb') as f:
-                for chunk in file_response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-            return send_file(filename, as_attachment=True, download_name="audio.mp3")
+        # מחיקת קובץ ישן אם קיים כדי למנוע כפילויות
+        if os.path.exists(output_file_path):
+            os.remove(output_file_path)
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+
+        if os.path.exists(output_file_path):
+            return send_file(output_file_path, as_attachment=True, download_name="audio.mp3")
         else:
-            return f"השרת המתווך החזיר קוד שגיאה: {file_response.status_code}"
+            return "שגיאה: הקובץ לא נוצר בהצלחה בשרת"
 
     except Exception as e:
-        return f"שגיאת תקשורת ברשת (רשת השרת חסומה או בבנייה): {str(e)}"
+        return f"שגיאה פנימית בהורדה ישירה מיוטיוב: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
