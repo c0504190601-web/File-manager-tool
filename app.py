@@ -19,26 +19,32 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות המפעילות אימות OAuth ומאפשרות אינטראקציה לצורך קבלת קוד אישור בדפדפן
+    # הגדרות מתוקנות המדמות בצורה מלאה לקוח אינטרנט מובנה כדי למנוע את דרישת הבוטים
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
-        'yt_dlp_options': {'compat_opts': set()},
         'extractor_args': {
             'youtube': {
-                'player_client': ['tv'],
-                'oauth': True  # הפעלת מנגנון אימות רשמי של גוגל
+                'player_client': ['web_creator', 'tv'],
             }
         },
+        # הוספת כותרת דפדפן מותאמת אישית כדי למנוע זיהוי של השרת כבוט
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+        }
     }
 
-    # הסרת ה-try/except כדי לאפשר לקישור האימות להופיע בתוך ה-Logs ב-Render
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(video_url, download=True)
-        filename = ydl.prepare_filename(info)
-    
-    return send_file(filename, as_attachment=True)
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=True)
+            if not info:
+                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון בגלל הגבלות שרת."
+            filename = ydl.prepare_filename(info)
+        return send_file(filename, as_attachment=True)
+    except Exception as e:
+        return f"שגיאה בהורדה: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
