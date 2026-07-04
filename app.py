@@ -19,11 +19,17 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות בסיסיות ויציבות
+    # הגדרות מיוחדות המדמות נגן חיצוני מוטמע (Embedded) לעקיפת חסימות ענן
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['web_embedded'],
+                'skip': ['webpage', 'configs']
+            }
+        },
     }
 
     try:
@@ -34,9 +40,6 @@ def download():
             filename = ydl.prepare_filename(info)
         return send_file(filename, as_attachment=True)
     except Exception as e:
-        # הצגת שגיאה מפורטת ומניעת קריסת השרת ל-500
-        if "Sign in to confirm you’re not a bot" in str(e):
-            return "שגיאה: כתובת ה-IP של שרת ה-Render נחסמה על ידי יוטיוב. יש להשתמש ב-Proxy או להריץ את הקוד על שרת עם IP ביתי."
         return f"שגיאה בהורדה: {str(e)}"
 
 if __name__ == '__main__':
