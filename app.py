@@ -1,6 +1,15 @@
-from flask import Flask, request, send_file
-import requests
 import os
+import sys
+
+# מנגנון התקנה אוטומטי בתוך הקוד לעקיפת תקלות בנייה בשרת
+try:
+    import requests
+except ModuleNotFoundError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
+
+from flask import Flask, request, send_file
 
 app = Flask(__name__)
 
