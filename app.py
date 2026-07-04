@@ -19,22 +19,29 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות מתוקנות: שילוב של העוגיות ולקוח אנדרואיד לעקיפת מגבלות חילוץ הפורמטים
+    # הגדרות עוקפות חסימה ללא תלות בעוגיות שפגו
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
-        'cookiefile': 'cookies.txt',          # שימוש בקובץ העוגיות שהעלית
-        'extractor_args': {'youtube': {'player_client': ['android', 'web']}}, # אילוץ לקוח אנדרואיד לעקיפת ה-n challenge[cite: 1]
+        # שימוש בחילוץ מותאם אישית של לקוחות ניידים ואינטרנט משולב
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios', 'android', 'web_embedded'],
+                'skip': ['webpage', 'configs']
+            }
+        },
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(video_url, download=True)
-        if not info:
-            return "שגיאה: לא ניתן היה לחלץ את פורמט הווידאו המבוקש."
-        filename = ydl.prepare_filename(info)
-    
-    return send_file(filename, as_attachment=True)
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=True)
+            if not info:
+                return "שגיאה: יוטיוב חסמה את הגישה לשרת זה. יש לרענן עוגיות או להשתמש ב-Proxy."
+            filename = ydl.prepare_filename(info)
+        return send_file(filename, as_attachment=True)
+    except Exception as e:
+        return f"שגיאה בהורדה: {str(e)}"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
