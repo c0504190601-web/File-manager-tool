@@ -19,15 +19,14 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # שימוש בפורמט בסיסי, לקוח אנדרואיד, והפניית הבקשות דרך Proxy ציבורי לעקיפת חסימת ה-IP של Render
+    # הסרת ה-Proxy הבעייתי ושימוש בהגדרות חילוץ עצמאיות
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
-        'proxy': 'http://pubproxy.com/api/proxy', # שימוש בכתובת מתווכת (ניתן להחליף במידת הצורך ב-Proxy קבוע)
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web']
+                'player_client': ['web_embedded', 'android'],
             }
         },
     }
