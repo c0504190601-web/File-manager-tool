@@ -19,11 +19,12 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # שימוש בסיומת .dat כדי שהקובץ לא יזוהה אוטומטית כוידאו
+    # שימוש בסיומת .dat והפניה לקובץ העוגיות שהעלית כדי לעקוף את חסימת הבוטים
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
+        'cookiefile': 'cookies.txt',  # שימוש בקובץ העוגיות שהעלית למאגר
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
