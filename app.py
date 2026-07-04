@@ -19,15 +19,15 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות המשתמשות במנגנון OAuth הרשמי של יוטיוב לעקיפת חסימות IP של ענן
+    # שימוש בפורמט בסיסי, לקוח אנדרואיד, והפניית הבקשות דרך Proxy ציבורי לעקיפת חסימת ה-IP של Render
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
+        'proxy': 'http://pubproxy.com/api/proxy', # שימוש בכתובת מתווכת (ניתן להחליף במידת הצורך ב-Proxy קבוע)
         'extractor_args': {
             'youtube': {
-                'player_client': ['web', 'android'],
-                'oauth': True  # הפעלת אימות OAuth רשמי
+                'player_client': ['android', 'web']
             }
         },
     }
