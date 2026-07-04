@@ -19,26 +19,24 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # הגדרות אופטימליות לעקיפת חסימות IP של שרתי ענן ללא עוגיות
+    # הגדרות בסיסיות ויציבות
     ydl_opts = {
-        'format': 'worst/best', # עדיפות לפורמט בסיסי וקל יותר לעקיפת חסימות, ואם לא אז הכי טוב
+        'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['safari', 'web'],
-            }
-        },
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=True)
             if not info:
-                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון בגלל הגבלות שרת."
+                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון."
             filename = ydl.prepare_filename(info)
         return send_file(filename, as_attachment=True)
     except Exception as e:
+        # הצגת שגיאה מפורטת ומניעת קריסת השרת ל-500
+        if "Sign in to confirm you’re not a bot" in str(e):
+            return "שגיאה: כתובת ה-IP של שרת ה-Render נחסמה על ידי יוטיוב. יש להשתמש ב-Proxy או להריץ את הקוד על שרת עם IP ביתי."
         return f"שגיאה בהורדה: {str(e)}"
 
 if __name__ == '__main__':
