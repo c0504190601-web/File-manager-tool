@@ -19,27 +19,26 @@ def download():
     if not video_url:
         return "נא לספק לינק"
 
-    # שימוש בשמות הלקוחות המדויקים (tv ו-ios) המאפשרים עקיפת מנגנוני הגנת בוטים בענן
+    # הגדרות המפעילות אימות OAuth ומאפשרות אינטראקציה לצורך קבלת קוד אישור בדפדפן
     ydl_opts = {
         'format': 'best',
         'outtmpl': 'downloaded_video.dat',
         'nocheckcertificate': True,
+        'yt_dlp_options': {'compat_opts': set()},
         'extractor_args': {
             'youtube': {
-                'player_client': ['tv', 'ios'],
+                'player_client': ['tv'],
+                'oauth': True  # הפעלת מנגנון אימות רשמי של גוגל
             }
         },
     }
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=True)
-            if not info:
-                return "שגיאה: לא ניתן היה לחלץ את המידע מהסרטון בגלל הגבלות שרת."
-            filename = ydl.prepare_filename(info)
-        return send_file(filename, as_attachment=True)
-    except Exception as e:
-        return f"שגיאה בהורדה: {str(e)}"
+    # הסרת ה-try/except כדי לאפשר לקישור האימות להופיע בתוך ה-Logs ב-Render
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(video_url, download=True)
+        filename = ydl.prepare_filename(info)
+    
+    return send_file(filename, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
